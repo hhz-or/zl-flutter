@@ -42,13 +42,19 @@
 ## 快速开始
 
 ```bash
+git clone git@github.com:hhz-or/zl-flutter.git
+cd zl-flutter
+
+# 可选：拿回原项目的参考副本（字体子集「重新生成」时需要，只跑 --verify 不需要）
+git clone https://github.com/hhz-or/web-instruction 指令
+
 flutter pub get
 flutter gen-l10n                 # 由 lib/l10n/*.arb 生成 AppLocalizations
 
 flutter run -d windows           # 主要目标：本地桌面
 flutter run -d chrome            # 顺带支持浏览器
 
-flutter test                     # 全部测试（115 个用例）
+flutter test                     # 全部测试（117 个用例）
 flutter analyze                  # 静态分析（0 issue）
 ```
 
