@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../core/theme/neon_palette.dart';
 import '../../data/models/app_settings.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_scope.dart';
@@ -26,7 +25,6 @@ class SettingsDialog extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final neon = context.neon;
     final controller = AppScope.of(context).settings;
-    final locale = Localizations.localeOf(context);
 
     return ListenableBuilder(
       listenable: controller,
@@ -58,11 +56,15 @@ class SettingsDialog extends StatelessWidget {
                   children: <Widget>[
                     _SectionLabel(l10n.settingsAppearance),
 
-                    _PaletteRow(
-                      selected: NeonPalette.byId(settings.paletteId),
-                      locale: locale,
-                      onSelected: (palette) => controller.update(
-                        (s) => s.copyWith(paletteId: palette.id),
+                    _ColorPickerRow(
+                      color: Color(settings.accentColor),
+                      onChanged: (color) => controller.update(
+                        (s) => s.copyWith(accentColor: color.toARGB32()),
+                      ),
+                      onReset: () => controller.update(
+                        (s) => s.copyWith(
+                          accentColor: AppSettings.defaultAccentColor,
+                        ),
                       ),
                     ),
 
@@ -270,84 +272,160 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// 主题色：一排圆点 + 当前色名。
-class _PaletteRow extends StatelessWidget {
-  const _PaletteRow({
-    required this.selected,
-    required this.locale,
-    required this.onSelected,
+/// 主题色：可自由调节（HSV 三个滑条）+ 一键恢复默认蓝。
+///
+/// 主色是整套视觉的唯一色相来源（文字辉光、按钮、描边、控件都取自它），
+/// 所以这里放开成任意颜色，而不是给几个预设。
+class _ColorPickerRow extends StatelessWidget {
+  const _ColorPickerRow({
+    required this.color,
+    required this.onChanged,
+    required this.onReset,
   });
 
-  final NeonPalette selected;
-  final Locale locale;
-  final ValueChanged<NeonPalette> onSelected;
+  final Color color;
+  final ValueChanged<Color> onChanged;
+  final VoidCallback onReset;
+
+  static String _hex(Color color) =>
+      '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
   @override
   Widget build(BuildContext context) {
     final neon = context.neon;
-    return Row(
+    final l10n = AppLocalizations.of(context);
+    final hsv = HSVColor.fromColor(color);
+    final isDefault = color.toARGB32() == AppSettings.defaultAccentColor;
+
+    void update({double? hue, double? saturation, double? value}) {
+      onChanged(
+        hsv
+            .withHue(hue ?? hsv.hue)
+            .withSaturation(saturation ?? hsv.saturation)
+            .withValue(value ?? hsv.value)
+            .toColor(),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Expanded(
-          child: Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: <Widget>[
-              for (final palette in NeonPalette.values)
-                Tooltip(
-                  message: palette.labelFor(locale),
-                  child: InkWell(
-                    key: Key('settings-palette-${palette.id}'),
-                    onTap: () => onSelected(palette),
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: palette.accent,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: palette == selected
-                              ? neon.textPrimary
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                        boxShadow: neon.glowStrength > 0
-                            ? <BoxShadow>[
-                                BoxShadow(
-                                  color: palette.accent.withValues(
-                                    alpha: 0.7 * neon.glowStrength,
-                                  ),
-                                  blurRadius: 10,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: palette == selected
-                          ? Icon(
-                              Icons.check,
-                              size: 15,
-                              color: ThemeData.estimateBrightnessForColor(
-                                        palette.accent,
-                                      ) ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black,
-                            )
-                          : null,
-                    ),
+        // 用 Wrap 而不是 Row：英文的「Accent colour / Reset to blue」比中文长，
+        // 窄弹窗里必须能换行，不能硬撑出 overflow。
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 4,
+          children: <Widget>[
+            Text(
+              l10n.settingsThemeColor,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  key: const Key('settings-color-preview'),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: neon.textPrimary, width: 1.5),
+                    boxShadow: neon.glowStrength > 0
+                        ? <BoxShadow>[
+                            BoxShadow(
+                              color: color.withValues(
+                                alpha: 0.7 * neon.glowStrength,
+                              ),
+                              blurRadius: 10,
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                Text(
+                  _hex(color),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: neon.textMuted,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            TextButton(
+              key: const Key('settings-color-reset'),
+              onPressed: isDefault ? null : onReset,
+              style: TextButton.styleFrom(
+                foregroundColor: neon.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(l10n.settingsAccentReset),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Text(
-          selected.labelFor(locale),
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: neon.textMuted),
+        const SizedBox(height: 4),
+        _HueSlider(
+          value: hsv.hue,
+          onChanged: (h) => update(hue: h),
+        ),
+        _SliderRow(
+          id: 'color-saturation',
+          label: l10n.colorSaturation,
+          valueLabel: '${(hsv.saturation * 100).round()}%',
+          value: hsv.saturation,
+          min: 0,
+          max: 1,
+          onChanged: (v) => update(saturation: v),
+        ),
+        _SliderRow(
+          id: 'color-brightness',
+          label: l10n.colorBrightness,
+          valueLabel: '${(hsv.value * 100).round()}%',
+          value: hsv.value,
+          min: 0,
+          max: 1,
+          onChanged: (v) => update(value: v),
         ),
       ],
+    );
+  }
+}
+
+/// 色相滑条：轨道直接画成彩虹，滑块照旧由 [Slider] 提供。
+class _HueSlider extends StatelessWidget {
+  const _HueSlider({required this.value, required this.onChanged});
+
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  static final List<Color> _spectrum = <Color>[
+    for (int h = 0; h <= 360; h += 30)
+      HSVColor.fromAHSV(1, h.toDouble() % 360, 1, 1).toColor(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _SliderRow(
+      id: 'color-hue',
+      label: AppLocalizations.of(context).colorHue,
+      valueLabel: '${value.round()}°',
+      value: value,
+      min: 0,
+      max: 360,
+      onChanged: onChanged,
+      // 轨道本身由下面的渐变条提供，Slider 自己的轨道透明化。
+      track: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          gradient: LinearGradient(colors: _spectrum),
+        ),
+      ),
     );
   }
 }
@@ -516,6 +594,7 @@ class _SwitchRow extends StatelessWidget {
 class _SliderRow extends StatelessWidget {
   const _SliderRow({
     super.key,
+    this.id,
     required this.label,
     required this.valueLabel,
     required this.value,
@@ -524,8 +603,11 @@ class _SliderRow extends StatelessWidget {
     required this.onChanged,
     this.hint = '',
     this.enabled = true,
+    this.track,
   });
 
+  /// 用于测试定位的稳定 id（`settings-<id>`）。为空则不挂 Key。
+  final String? id;
   final String label;
   final String hint;
   final String valueLabel;
@@ -535,11 +617,50 @@ class _SliderRow extends StatelessWidget {
   final ValueChanged<double> onChanged;
   final bool enabled;
 
+  /// 自定义轨道外观（色相滑条用它铺彩虹渐变）。给了就把 Slider 自带轨道
+  /// 设为透明，只留滑块。
+  final Widget? track;
+
   @override
   Widget build(BuildContext context) {
     final neon = context.neon;
     final textTheme = Theme.of(context).textTheme;
     final effective = enabled ? neon.accent : neon.textMuted;
+    Widget slider = Slider(
+      value: value.clamp(min, max),
+      min: min,
+      max: max,
+      onChanged: enabled ? onChanged : null,
+    );
+    if (track != null) {
+      slider = SliderTheme(
+        data: SliderTheme.of(context).copyWith(
+          trackHeight: 12,
+          activeTrackColor: Colors.transparent,
+          inactiveTrackColor: Colors.transparent,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            // 必须是 Positioned.fill + width: infinity：Stack 的非定位子节点
+            // 拿到的是松约束，只写 height 的 SizedBox 宽度会是 0（彩虹条消失）。
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Center(
+                  child: SizedBox(
+                    height: 12,
+                    width: double.infinity,
+                    child: track,
+                  ),
+                ),
+              ),
+            ),
+            slider,
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Column(
@@ -567,12 +688,7 @@ class _SliderRow extends StatelessWidget {
               hint,
               style: textTheme.bodySmall?.copyWith(color: neon.textMuted),
             ),
-          Slider(
-            value: value.clamp(min, max),
-            min: min,
-            max: max,
-            onChanged: enabled ? onChanged : null,
-          ),
+          if (id == null) slider else KeyedSubtree(key: Key('settings-$id'), child: slider),
         ],
       ),
     );

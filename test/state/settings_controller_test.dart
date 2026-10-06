@@ -101,32 +101,39 @@ void main() {
         AppSettings.defaults.easterEggRate,
       );
     });
-    test('白名单外的色板 id 在读取时被收敛回默认', () async {
+    test('主题色字段损坏时回退到默认蓝，其它字段不受影响', () async {
       final store = InMemoryStore(<String, String>{
-        StorageKeys.settings:
-            '{"paletteId":"not_a_real_palette","reduceMotion":true}',
+        StorageKeys.settings: '{"accentColor":"nonsense","reduceMotion":true}',
       });
       final controller = SettingsController(store: store);
 
       await controller.load();
 
-      expect(controller.value.paletteId, AppSettings.defaults.paletteId);
+      expect(controller.value.accentColor, AppSettings.defaultAccentColor);
       expect(controller.value.reduceMotion, isTrue, reason: '其它字段不受影响');
     });
 
-    test('合法色板 id 原样保留', () {
-      expect(
-        SettingsController.normalize(
-          const AppSettings(paletteId: 'mist_red'),
-        ).paletteId,
-        'mist_red',
+    test('半透明主色被拉成完全不透明', () {
+      final parsed = AppSettings.fromJson(
+        const <String, Object?>{'accentColor': 0x40FF0000},
       );
-      expect(
-        SettingsController.normalize(
-          const AppSettings(paletteId: 'index_blue'),
-        ).paletteId,
-        'index_blue',
-      );
+      expect(parsed.accentColor, 0xFFFF0000);
+      expect(parsed.accentColor >> 24, 0xFF);
+    });
+
+    test('任意合法 ARGB 都原样保留', () {
+      for (final int argb in <int>[
+        AppSettings.defaultAccentColor,
+        0xFF7C3AED,
+        0xFF00FF00,
+        0xFFFFFFFF,
+      ]) {
+        expect(
+          AppSettings.fromJson(<String, Object?>{'accentColor': argb})
+              .accentColor,
+          argb,
+        );
+      }
     });
   });
 

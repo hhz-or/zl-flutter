@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-import 'neon_palette.dart';
-
 /// 应用统一使用的字体族，与原版 `main.css` 的
 /// `font-family: 'Inter', 'LXGWWenKai', sans-serif;` 一致。
 ///
-/// 西文用 Inter（`fontFamily`），中文回退到霞鹜文楷（`fontFamilyFallback`）；
-/// Flutter 的字体回退是「前者缺字才用后者」，所以顺序不能颠倒。
+/// 西文用 Inter（`fontFamily`），中文回退到子集中的霞鹜文楷。
 const String kLatinFontFamily = 'Inter';
 
 /// 中文字族。随应用分发的是霞鹜文楷的**子集**，按 OFL 的保留字体名条款改名
 /// （见 `THIRD_PARTY_NOTICES.md`），因此这里用的不是 `LXGW WenKai`。
 const String kCjkFontFamily = 'WenKaiZL';
 const List<String> kFontFallback = <String>[kCjkFontFamily];
+
+/// 默认霓虹主色，即原版 `main.css` 的 `--neon-blue: #00d2ff`。
+const Color kDefaultAccent = Color(0xFF00D2FF);
 
 /// 把 CSS `text-shadow` 的 blur-radius 换算成 Flutter `Shadow.blurRadius`。
 ///
@@ -24,10 +24,10 @@ double cssBlurToFlutter(double cssBlurRadius) {
   return ((sigma - 0.5) / 0.57735).clamp(0, double.infinity);
 }
 
-/// 原版 `main.css` 里 `:root` 定义的三个颜色。
+/// 原版 `main.css` 里 `:root` 定义的三个颜色（主色可被设置覆盖）。
 abstract final class OriginalColors {
   /// `--neon-blue: #00d2ff`
-  static const Color neonBlue = Color(0xFF00D2FF);
+  static const Color neonBlue = kDefaultAccent;
 
   /// `--bright-white: #ffffff`
   static const Color brightWhite = Color(0xFFFFFFFF);
@@ -40,7 +40,7 @@ abstract final class OriginalColors {
 @immutable
 class NeonTheme extends ThemeExtension<NeonTheme> {
   const NeonTheme({
-    this.palette = NeonPalette.indexBlue,
+    this.accent = kDefaultAccent,
     this.glowStrength = 1,
     this.background = OriginalColors.darkBg,
     this.surface = const Color(0xFF0A0E14),
@@ -50,8 +50,8 @@ class NeonTheme extends ThemeExtension<NeonTheme> {
 
   static const NeonTheme standard = NeonTheme();
 
-  /// 当前色板。默认是原版的 `--neon-blue`。
-  final NeonPalette palette;
+  /// 霓虹主色。默认是原版的 `--neon-blue`，可在设置里任意调整。
+  final Color accent;
 
   /// 发光强度 0 ~ 1。`1` 即原版 CSS 的三层 text-shadow。
   final double glowStrength;
@@ -68,14 +68,10 @@ class NeonTheme extends ThemeExtension<NeonTheme> {
   /// 次要文字（弹窗里的说明文字）。
   final Color textMuted;
 
-  /// 霓虹主色，来自当前色板。
-  Color get accent => palette.accent;
-
   Color get accentSoft => accent.withValues(alpha: 0.35);
 
   Color get divider => const Color(0xFF1E2833);
 
-  /// 主色的不透明版本，用于色板圆点等需要实心填充的地方。
   bool get glowEnabled => glowStrength > 0;
 
   /// 逐字对应原版 `main.css` 的两处 text-shadow：
@@ -132,7 +128,7 @@ class NeonTheme extends ThemeExtension<NeonTheme> {
 
   @override
   NeonTheme copyWith({
-    NeonPalette? palette,
+    Color? accent,
     double? glowStrength,
     Color? background,
     Color? surface,
@@ -140,7 +136,7 @@ class NeonTheme extends ThemeExtension<NeonTheme> {
     Color? textMuted,
   }) {
     return NeonTheme(
-      palette: palette ?? this.palette,
+      accent: accent ?? this.accent,
       glowStrength: glowStrength ?? this.glowStrength,
       background: background ?? this.background,
       surface: surface ?? this.surface,
@@ -155,7 +151,7 @@ class NeonTheme extends ThemeExtension<NeonTheme> {
       return this;
     }
     return NeonTheme(
-      palette: t < 0.5 ? palette : other.palette,
+      accent: Color.lerp(accent, other.accent, t)!,
       glowStrength: glowStrength + (other.glowStrength - glowStrength) * t,
       background: Color.lerp(background, other.background, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
@@ -168,17 +164,16 @@ class NeonTheme extends ThemeExtension<NeonTheme> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is NeonTheme &&
-          other.palette == palette &&
+          other.accent == accent &&
           other.glowStrength == glowStrength &&
           other.background == background &&
           other.surface == surface &&
-          other.accent == accent &&
           other.textPrimary == textPrimary &&
           other.textMuted == textMuted;
 
   @override
   int get hashCode =>
-      Object.hash(background, surface, accent, textPrimary, textMuted);
+      Object.hash(accent, glowStrength, background, surface, textPrimary, textMuted);
 }
 
 /// 便捷读取：`context.neon.accent`。
@@ -204,13 +199,13 @@ extension NeonThemeContext on BuildContext {
   }
 }
 
-/// 主题工厂：只有一种主题——原版的纯黑霓虹，可换色板与发光强度。
+/// 主题工厂：只有一种主题——原版的纯黑霓虹，主色与发光强度可调。
 abstract final class AppTheme {
   static ThemeData build({
-    NeonPalette palette = NeonPalette.indexBlue,
+    Color accent = kDefaultAccent,
     double glowStrength = 1,
   }) {
-    final neon = NeonTheme(palette: palette, glowStrength: glowStrength);
+    final neon = NeonTheme(accent: accent, glowStrength: glowStrength);
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,

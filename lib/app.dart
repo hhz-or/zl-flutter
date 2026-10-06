@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
-import 'core/theme/neon_palette.dart';
 import 'data/models/app_settings.dart';
 import 'features/generator/generator_page.dart';
 import 'features/settings/settings_dialog.dart';
@@ -56,9 +55,9 @@ class _InstructionAppState extends State<InstructionApp> {
           child: MaterialApp(
             onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
             debugShowCheckedModeBanner: false,
-            // 只有一种主题：原版的纯黑霓虹，可换色板与发光强度。
+            // 只有一种主题：原版的纯黑霓虹，主色与发光强度可调。
             theme: AppTheme.build(
-              palette: NeonPalette.byId(settings.paletteId),
+              accent: Color(settings.accentColor),
               glowStrength: settings.glowStrength,
             ),
             locale: _localeFor(settings.language),

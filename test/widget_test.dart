@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_zl/app.dart';
 import 'package:flutter_zl/core/storage/key_value_store.dart';
 import 'package:flutter_zl/core/theme/app_theme.dart';
-import 'package:flutter_zl/core/theme/neon_palette.dart';
 import 'package:flutter_zl/core/widgets/neon_button.dart';
 import 'package:flutter_zl/data/models/app_settings.dart';
 import 'package:flutter_zl/domain/instruction_corpus.dart';
@@ -331,18 +330,38 @@ void main() {
       expect(find.text(zh.generateButton), findsNothing);
     });
 
-    testWidgets('换主题色会即时改变霓虹主色', (tester) async {
+    testWidgets('拖动色相滑条会即时改变霓虹主色，重置按钮恢复默认蓝', (tester) async {
       final harness = await pumpApp(tester);
       final scaffold = tester.element(find.byType(Scaffold).first);
-      expect(scaffold.neon.accent, NeonPalette.indexBlue.accent);
+      expect(scaffold.neon.accent, kDefaultAccent);
 
       await tester.tap(find.byKey(const Key('settings-button')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('settings-palette-mist_red')));
+
+      // 拖到轨道最右侧 = 色相 360°，得到红色（默认蓝 200°）。
+      final slider = find.descendant(
+        of: find.byKey(const Key('settings-color-hue')),
+        matching: find.byType(Slider),
+      );
+      await tester.drag(slider, const Offset(400, 0));
       await tester.pumpAndSettle();
 
-      expect(harness.settingsController.value.paletteId, 'mist_red');
-      expect(scaffold.neon.accent, NeonPalette.mistRed.accent);
+      final picked = harness.settingsController.value.accentColor;
+      expect(picked, isNot(AppSettings.defaultAccentColor));
+      expect(Color(picked), scaffold.neon.accent, reason: '主题应即时跟随');
+      expect(
+        Color(picked).toARGB32() >> 24,
+        0xFF,
+        reason: '主色必须完全不透明',
+      );
+
+      await tester.tap(find.byKey(const Key('settings-color-reset')));
+      await tester.pumpAndSettle();
+      expect(
+        harness.settingsController.value.accentColor,
+        AppSettings.defaultAccentColor,
+      );
+      expect(scaffold.neon.accent, kDefaultAccent);
     });
 
     testWidgets('霓虹发光调成 0 后文字完全没有阴影', (tester) async {

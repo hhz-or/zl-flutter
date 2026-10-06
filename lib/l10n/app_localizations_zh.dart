@@ -22,13 +22,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get footerWarning => '警告：如未完成指令，将立刻派出代行者前往你的位置绞杀';
 
   @override
-  String get footerDisclaimer => '本应用为 Project Moon 同人二创，所有指令均为随机拼装的虚构内容，请勿照做。';
+  String get footerDisclaimer => '仅供娱乐，请勿照做';
 
   @override
   String get settingsTitle => '设置';
 
   @override
   String get settingsAppearance => '外观';
+
+  @override
+  String get settingsThemeColor => '主题色';
+
+  @override
+  String get settingsAccentReset => '恢复默认蓝';
+
+  @override
+  String get colorHue => '色相';
+
+  @override
+  String get colorSaturation => '饱和度';
+
+  @override
+  String get colorBrightness => '明度';
 
   @override
   String get settingsLanguage => '语言';

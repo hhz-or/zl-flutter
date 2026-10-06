@@ -2,6 +2,17 @@
 
 本仓库包含的字体、语料与设定均来自第三方，以下是出处与许可说明。
 
+## 许可速查
+
+| 内容 | 许可 |
+| --- | --- |
+| 本仓库的**源代码** | [MIT](LICENSE)，Copyright (c) 2026 hhz-or |
+| `assets/fonts/*.ttf` | SIL Open Font License 1.1（全文见同目录 `LICENSE-*.txt`） |
+| 语料（130 句）与页面结构 / 样式 / 动画时序 | 转录自 [hhz-or/web-instruction](https://github.com/hhz-or/web-instruction)，MIT，Copyright (c) 2026 hhz |
+| Project Moon《废墟图书馆》/《边狱公司》设定与相关商标 | 归其所有者，本项目仅作非商业同人二创使用 |
+
+**MIT 只覆盖代码**：字体与 Project Moon 设定不在 MIT 覆盖范围内。
+
 ---
 
 ## 1. 霞鹜文楷（LXGW WenKai）—— 中文字形
@@ -49,10 +60,11 @@ Inter 的 OFL **没有**声明保留字体名，因此这里直接从可变字�
 ## 3. 语料与设定
 
 * 语料（场景 / 行为 / 补充 / 彩蛋四组共 130 句）与页面结构、样式、动画时序
-  均逐字转录自 <https://github.com/hhz-or/web-instruction>。
+  均逐字转录自 <https://github.com/hhz-or/web-instruction>
+  （MIT，Copyright (c) 2026 hhz）。本项目是它的复刻，不是原创。
 * 设定出处：Project Moon《废墟图书馆》/《边狱公司》中的「食指」阵营。
 * 本应用是非商业同人二创，与原作及其发行方没有任何隶属关系。
-  所有「指令」都是随机拼装出来的虚构内容，**不构成任何真实建议**。
+  所有「指令」都是随机拼装出来的虚构内容，**仅供娱乐，请勿照做**。
 
 ---
 

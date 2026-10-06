@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// Second footer line, below the original warning
   ///
   /// In en, this message translates to:
-  /// **'A fan-made Project Moon tribute. Every instruction is randomly generated fiction — please do not act on it.'**
+  /// **'For entertainment only — please do not act on it.'**
   String get footerDisclaimer;
 
   /// No description provided for @settingsTitle.
@@ -139,6 +139,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Appearance'**
   String get settingsAppearance;
+
+  /// Label of the free-form colour picker
+  ///
+  /// In en, this message translates to:
+  /// **'Accent colour'**
+  String get settingsThemeColor;
+
+  /// One-tap restore of the original #00d2ff
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to blue'**
+  String get settingsAccentReset;
+
+  /// No description provided for @colorHue.
+  ///
+  /// In en, this message translates to:
+  /// **'Hue'**
+  String get colorHue;
+
+  /// No description provided for @colorSaturation.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturation'**
+  String get colorSaturation;
+
+  /// No description provided for @colorBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness'**
+  String get colorBrightness;
 
   /// No description provided for @settingsLanguage.
   ///

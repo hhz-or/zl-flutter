@@ -24,13 +24,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get footerDisclaimer =>
-      'A fan-made Project Moon tribute. Every instruction is randomly generated fiction — please do not act on it.';
+      'For entertainment only — please do not act on it.';
 
   @override
   String get settingsTitle => 'Settings';
 
   @override
   String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsThemeColor => 'Accent colour';
+
+  @override
+  String get settingsAccentReset => 'Reset to blue';
+
+  @override
+  String get colorHue => 'Hue';
+
+  @override
+  String get colorSaturation => 'Saturation';
+
+  @override
+  String get colorBrightness => 'Brightness';
 
   @override
   String get settingsLanguage => 'Language';

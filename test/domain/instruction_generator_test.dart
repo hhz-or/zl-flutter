@@ -622,7 +622,7 @@ void main() {
       expect(
         AppSettings.defaults.toJson().keys.toSet(),
         <String>{
-          'paletteId',
+          'accentColor',
           'language',
           'glowStrength',
           'reduceMotion',
@@ -667,28 +667,28 @@ void main() {
       );
     });
 
-    test('合法键被正确解析（含枚举与色板 id）', () {
+    test('合法键被正确解析（含枚举与主题色）', () {
       final AppSettings parsed = AppSettings.fromJson(const <String, Object?>{
-        'paletteId': 'mist_red',
+        'accentColor': 0xFF7C3AED,
         'language': 'en',
         'glowStrength': 0.4,
         'strategy': 'shuffleBag',
       });
-      expect(parsed.paletteId, 'mist_red');
+      expect(parsed.accentColor, 0xFF7C3AED);
       expect(parsed.language, AppLanguage.en);
       expect(parsed.glowStrength, 0.4);
       expect(parsed.strategy, GenerationStrategy.shuffleBag);
     });
 
-    test('未知枚举值逐字段回退', () {
+    test('未知枚举值与损坏的颜色逐字段回退', () {
       final AppSettings parsed = AppSettings.fromJson(const <String, Object?>{
         'language': 'klingon',
         'strategy': 'whatever',
-        'paletteId': '',
+        'accentColor': 'not a colour',
       });
       expect(parsed.language, AppSettings.defaults.language);
       expect(parsed.strategy, AppSettings.defaults.strategy);
-      expect(parsed.paletteId, AppSettings.defaults.paletteId);
+      expect(parsed.accentColor, AppSettings.defaultAccentColor);
     });
 
     test('越界数值被夹紧到合法区间', () {

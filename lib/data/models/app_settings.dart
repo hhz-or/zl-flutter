@@ -24,7 +24,7 @@ enum GenerationStrategy {
 @immutable
 class AppSettings {
   const AppSettings({
-    this.paletteId = 'index_blue',
+    this.accentColor = defaultAccentColor,
     this.language = AppLanguage.system,
     this.glowStrength = 1,
     this.reduceMotion = false,
@@ -34,8 +34,11 @@ class AppSettings {
     this.strategy = GenerationStrategy.pureRandom,
   });
 
-  /// 霓虹主色 ID，见 `lib/core/theme/neon_palette.dart`。默认原版的 `#00d2ff`。
-  final String paletteId;
+  /// 默认霓虹主色，即原版 `main.css` 的 `--neon-blue: #00d2ff`。
+  static const int defaultAccentColor = 0xFF00D2FF;
+
+  /// 霓虹主色（32 位 ARGB）。随时可调，`defaultAccentColor` 即原版蓝。
+  final int accentColor;
 
   /// 界面语言。默认跟随系统。
   final AppLanguage language;
@@ -68,7 +71,7 @@ class AppSettings {
   static const double originalEasterEggRate = 0.15;
 
   AppSettings copyWith({
-    String? paletteId,
+    int? accentColor,
     AppLanguage? language,
     double? glowStrength,
     bool? reduceMotion,
@@ -78,7 +81,7 @@ class AppSettings {
     GenerationStrategy? strategy,
   }) {
     return AppSettings(
-      paletteId: paletteId ?? this.paletteId,
+      accentColor: accentColor ?? this.accentColor,
       language: language ?? this.language,
       glowStrength: glowStrength ?? this.glowStrength,
       reduceMotion: reduceMotion ?? this.reduceMotion,
@@ -90,7 +93,7 @@ class AppSettings {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'paletteId': paletteId,
+    'accentColor': accentColor,
     'language': language.name,
     'glowStrength': glowStrength,
     'reduceMotion': reduceMotion,
@@ -119,6 +122,19 @@ class AppSettings {
       return value;
     }
 
+    /// 颜色必须是**完全不透明**的 32 位整数：半透明的主色会让霓虹发光与
+    /// 描边出现难以预期的效果，所以统一把 alpha 拉满。
+    int colorOr(String key, int value) {
+      final raw = json[key];
+      if (raw is num && raw.isFinite) {
+        final int argb = raw.toInt();
+        if (argb >= 0 && argb <= 0xFFFFFFFF) {
+          return argb | 0xFF000000;
+        }
+      }
+      return value;
+    }
+
     T enumOr<T extends Enum>(String key, List<T> values, T value) {
       final raw = json[key];
       if (raw is String) {
@@ -131,20 +147,10 @@ class AppSettings {
       return value;
     }
 
-    String stringOr(String key, String value) {
-      final raw = json[key];
-      return raw is String && raw.isNotEmpty ? raw : value;
-    }
-
     return AppSettings(
-      paletteId: stringOr('paletteId', fallback.paletteId),
+      accentColor: colorOr('accentColor', fallback.accentColor),
       language: enumOr('language', AppLanguage.values, fallback.language),
-      glowStrength: doubleOr(
-        'glowStrength',
-        fallback.glowStrength,
-        0,
-        1,
-      ),
+      glowStrength: doubleOr('glowStrength', fallback.glowStrength, 0, 1),
       reduceMotion: boolOr('reduceMotion', fallback.reduceMotion),
       animationSpeed: doubleOr(
         'animationSpeed',
@@ -152,10 +158,7 @@ class AppSettings {
         0.25,
         3,
       ),
-      easterEggEnabled: boolOr(
-        'easterEggEnabled',
-        fallback.easterEggEnabled,
-      ),
+      easterEggEnabled: boolOr('easterEggEnabled', fallback.easterEggEnabled),
       easterEggRate: doubleOr('easterEggRate', fallback.easterEggRate, 0, 1),
       strategy: enumOr(
         'strategy',
@@ -169,7 +172,7 @@ class AppSettings {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is AppSettings &&
-          other.paletteId == paletteId &&
+          other.accentColor == accentColor &&
           other.language == language &&
           other.glowStrength == glowStrength &&
           other.reduceMotion == reduceMotion &&
@@ -180,7 +183,7 @@ class AppSettings {
 
   @override
   int get hashCode => Object.hash(
-    paletteId,
+    accentColor,
     language,
     glowStrength,
     reduceMotion,
@@ -192,7 +195,8 @@ class AppSettings {
 
   @override
   String toString() =>
-      'AppSettings($paletteId, ${language.name}, glow: $glowStrength, '
-      'reduceMotion: $reduceMotion, speed: $animationSpeed, '
-      'egg: $easterEggEnabled@$easterEggRate, ${strategy.name})';
+      'AppSettings(accent: #${accentColor.toRadixString(16)}, '
+      '${language.name}, glow: $glowStrength, reduceMotion: $reduceMotion, '
+      'speed: $animationSpeed, egg: $easterEggEnabled@$easterEggRate, '
+      '${strategy.name})';
 }
