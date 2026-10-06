@@ -54,7 +54,7 @@ flutter gen-l10n                 # 由 lib/l10n/*.arb 生成 AppLocalizations
 flutter run -d windows           # 主要目标：本地桌面
 flutter run -d chrome            # 顺带支持浏览器
 
-flutter test                     # 全部测试（117 个用例）
+flutter test                     # 全部测试（118 个用例）
 flutter analyze                  # 静态分析（0 issue）
 ```
 
@@ -219,7 +219,7 @@ ASCII 与中英文字符），把字体裁剪到实际用到的 **708 个码位*
 ## 测试
 
 ```bash
-flutter test                                   # 117 个用例
+flutter test                                   # 118 个用例
 flutter test --coverage                        # 行覆盖率 92.9%（19 个文件 / 1420 行）
 flutter analyze                                # 0 issue
 python tools/subset_fonts.py --verify          # 字体覆盖率（CI 门禁）
