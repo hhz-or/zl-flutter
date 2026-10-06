@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+# 发布产物的本地暂存目录（只在本机演练打包时用，真正的产物由 CI 生成）
+/dist/
 
 # Symbolication related
 app.*.symbols

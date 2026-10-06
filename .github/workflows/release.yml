@@ -1,0 +1,117 @@
+name: Release
+
+# 打 tag（v*）即自动构建两个目标并把产物附到 Release 上。
+# 也可以在 Actions 页面手动触发做一次演练（不会创建 Release）。
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.47.6'
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Windows
+        run: flutter build windows --release
+
+      - name: 打包
+        shell: pwsh
+        run: |
+          $name = "zl-flutter-${env:GITHUB_REF_NAME}-windows-x64"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          # 压缩 Release 目录的**内容**，解压后 exe/dll/data 直接在根目录。
+          Compress-Archive -Path build/windows/x64/runner/Release/* `
+                           -DestinationPath "dist/$name.zip" -CompressionLevel Optimal
+          Get-ChildItem dist | Select-Object Name, Length
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64
+          path: dist/*.zip
+          if-no-files-found: error
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Web
+        # --no-web-resources-cdn：canvaskit 打进产物，离线/内网也能跑。
+        # 不用 --wasm：Flutter 3.47 的多线程 skwasm 在「每帧都在变的文本」上会
+        #   破坏堆（flutter#190039，修复在 3.48），正是本应用乱码动画的负载特征。
+        run: >-
+          flutter build web
+          --release
+          --base-href /
+          --no-web-resources-cdn
+
+      - name: 清理产物
+        run: |
+          find build/web -name '*.map' -delete
+          find build/web -name '*.symbols' -delete
+          # 静态托管无法做 SPA rewrite，用 404 兜底避免刷新子路径 404。
+          cp build/web/index.html build/web/404.html
+
+      - name: 打包
+        run: |
+          name="zl-flutter-${GITHUB_REF_NAME}-web"
+          mkdir -p dist
+          # 在 build/web 内部打包，zip 里不带 build/web 前缀，解压即站点根目录。
+          (cd build/web && zip -qr "../../dist/$name.zip" .)
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    name: 发布
+    needs: [windows, web]
+    # 手动触发（workflow_dispatch）时没有 tag，只跑构建不出 Release。
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: 创建 Release 并附加产物
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lh dist
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "指令 $GITHUB_REF_NAME" \
+            --generate-notes \
+            dist/*.zip
