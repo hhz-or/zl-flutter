@@ -1,0 +1,56 @@
+name: flutter_zl
+description: "指令 · 食指指令生成器 —— https://github.com/hhz-or/web-instruction 的 Flutter 1:1 复刻"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 国际化：只为把界面文案集中放在 ARB 里（应用本身与原站一样只有中文）。
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.3
+
+  # 持久化设置（Web 上落到 localStorage）。除此之外没有任何运行时插件。
+  shared_preferences: ^2.5.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+# 由 l10n.yaml 驱动的 ARB → Dart 代码生成。
+flutter:
+  generate: true
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    # 西文：Inter（由可变字体实例化并按字符集裁剪，见 tools/subset_fonts.py）。
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+
+    # 中文：霞鹜文楷 LXGW WenKai 的**子集**（原始 24 MB，构建时裁剪到实际用到的
+    # 字符集）。子集属于 OFL 的「Modified Version」，而该字体的 OFL 声明了
+    # Reserved Font Name，其附加许可只覆盖「纯为网页分发」的子集；本项目会打包
+    # 可安装的桌面应用，不在该范围内，因此按 OFL 默认规则改名为 WenKaiZL。
+    # 字形完全一致，理由与出处见 THIRD_PARTY_NOTICES.md。
+    - family: WenKaiZL
+      fonts:
+        - asset: assets/fonts/WenKaiZL-Regular.ttf
+          weight: 400

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!--
+    `$FLUTTER_BASE_HREF` is replaced by `flutter build web --base-href <path>`.
+    It must stay first in <head> (every other URL below is relative to it) and it
+    must keep that exact spelling. Default is "/", so the app also works from a
+    GitHub Pages sub-path such as "/web-instruction/".
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <!-- 与原版逐字一致：不锁缩放（`user-scalable=no` 会挡住无障碍放大）。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+
+  <title>指令</title>
+  <meta name="description" content="食指指令生成器 —— 随机生成一条来自食指的指令">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/Icon-192.png">
+
+  <meta name="theme-color" content="#00d2ff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="指令">
+
+  <!-- Open Graph / Twitter. `og:image` is relative because the deployment path
+       is not known at build time; social crawlers prefer an absolute URL, so a
+       self-hosted deployment may want to hard-code one here. -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="指令">
+  <meta property="og:title" content="指令">
+  <meta property="og:description" content="食指指令生成器 —— 随机生成一条来自食指的指令">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="霓虹风格的食指图标">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="指令">
+  <meta name="twitter:description" content="食指指令生成器 —— 随机生成一条来自食指的指令">
+  <meta name="twitter:image" content="icons/Icon-512.png">
+
+  <!--
+    Intentionally dropped from the original site (github.com/hhz-or/web-instruction):
+      * Umami analytics — no telemetry, no third-party script, no cookie banner.
+      * giscus comments — a Flutter canvas has no comment surface, and the app
+                          keeps no server-side state at all.
+      * <meta http-equiv="Cache-Control"/"Pragma"/"Expires"> — meaningless in
+        modern browsers; they are ignored for HTTP-served documents. Cache busting
+        is handled by the build instead: Flutter emits hashed asset names under
+        assets/ (plus flutter_bootstrap.js / main.dart.js / service-worker
+        versioning), so a redeploy invalidates exactly what changed.
+
+    The original page paints instantly because it is plain HTML. A Flutter web app
+    needs a moment to boot CanvasKit, so this splash covers that gap with nothing
+    but the page title on the same black background — no logo, no spinner.
+  -->
+
+  <style>
+    :root {
+      --neon-blue: #00d2ff;
+      --dark-bg: #000000;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      overscroll-behavior: none; /* no rubber-banding / pull-to-refresh */
+    }
+
+    body {
+      overflow: hidden;
+      color: #fff;
+      /* 启动遮罩是纯 HTML，用不到 Flutter 打进 assets 的字体，走系统字体栈即可。 */
+      font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* The splash owns the viewport until Flutter's first frame is painted, so
+       nothing behind it should ever be able to scroll — and a scrollbar would
+       flash on the black background otherwise. */
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    #splash::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dark-bg);
+      overflow: hidden;
+      opacity: 1;
+      transition: opacity 320ms ease-out;
+    }
+
+    #splash.is-done {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-title {
+      font-size: 15px;
+      letter-spacing: 0.5em;
+      text-indent: 0.5em; /* re-centre the trailing letter-spacing */
+      color: #fff;
+      text-shadow:
+        0 0 5px #fff,
+        0 0 10px var(--neon-blue),
+        0 0 15px var(--neon-blue);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #splash { transition: none; }
+    }
+
+    .noscript-notice {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      box-sizing: border-box;
+      background: var(--dark-bg);
+      color: #fff;
+      font-size: 15px;
+      line-height: 1.9;
+      text-align: center;
+      text-shadow: 0 0 8px rgba(0, 210, 255, 0.8);
+    }
+  </style>
+
+  <script>
+    // Dismiss the CSS splash once Flutter has painted its first frame. The engine
+    // dispatches `flutter-first-frame` on `window` from its first post-frame
+    // callback (flutter/lib/src/rendering/binding.dart -> 'flutter/service_worker'),
+    // so this needs no polling and no `window.addEventListener('load', ...)`.
+    //
+    // A safety net hides the splash even if the engine never reports a frame, so
+    // a failed boot surfaces Flutter's own error output instead of a spinner.
+    (function () {
+      function dismiss() {
+        // Looked up lazily: this script sits in <head>, before #splash is parsed.
+        var splash = document.getElementById('splash');
+        if (splash && !splash.classList.contains('is-done')) {
+          splash.classList.add('is-done');
+          window.setTimeout(function () {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 400);
+        }
+      }
+
+      window.addEventListener('flutter-first-frame', dismiss, { once: true });
+      window.setTimeout(dismiss, 20000);
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="splash" role="status" aria-live="polite" aria-label="正在加载">
+    <div class="splash-title">指令</div>
+  </div>
+
+  <noscript>
+    <!-- Without JS the splash would spin forever, so take it out of the way. -->
+    <style>#splash { display: none; }</style>
+    <div class="noscript-notice">
+      本应用需要 JavaScript 才能运行。<br>
+      请在浏览器设置中启用 JavaScript 后重新打开本页面。
+    </div>
+  </noscript>
+
+  <!--
+    Flutter 3.x bootstrap contract.
+
+    This file is the ONLY place the app is bootstrapped from. The engine
+    customisation (`onEntrypointLoaded` -> `initializeEngine` -> `runApp`) and the
+    `flutter_js` / `flutter_build_config` template tokens (written with double
+    curly braces, in `web/flutter_bootstrap.js`) live in that file, which the
+    build substitutes them into. Putting the tokens inline here as well would
+    bootstrap the app twice — the tool performs a plain text substitution in both
+    files and never de-duplicates.
+
+    NEVER write a braced token name in this file, not even inside a comment:
+    substitution is unconditional, and the multi-line flutter.js source that gets
+    spliced in would terminate the surrounding HTML comment early and spill raw
+    JavaScript into the document.
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "@@locale": "zh",
+
+  "appTitle": "指令",
+  "generateButton": "获取指令",
+  "instructionPrefix": "致：",
+  "footerWarning": "警告：如未完成指令，将立刻派出代行者前往你的位置绞杀",
+  "footerDisclaimer": "本应用为 Project Moon 同人二创，所有指令均为随机拼装的虚构内容，请勿照做。",
+
+  "settingsTitle": "设置",
+  "settingsAppearance": "外观",
+  "settingsLanguage": "语言",
+  "languageSystem": "跟随系统",
+  "languageZh": "简体中文",
+  "languageEn": "English",
+  "settingsGlow": "霓虹发光",
+  "settingsGlowHint": "发光是逐帧重绘里最贵的一项，动画卡顿时可以调低",
+  "percentValue": "{percent}%",
+
+  "settingsMotion": "动效",
+  "settingsReduceMotion": "减少动效",
+  "settingsReduceMotionHint": "直接显示指令，不播放乱码动画",
+  "settingsAnimationSpeed": "动画速度",
+  "settingsAnimationSpeedHint": "1.00× 即原版速度",
+  "settingsAnimationSpeedValue": "{value}×",
+
+  "settingsGeneration": "生成",
+  "settingsEasterEgg": "启用彩蛋",
+  "settingsEasterEggHint": "原版固定按 15% 概率抽取",
+  "settingsEasterEggRate": "彩蛋概率",
+  "settingsEasterEggRateHint": "15% 即原版数值",
+  "settingsStrategy": "抽取策略",
+  "strategyPureRandom": "纯随机（与原版一致）",
+  "strategyShuffleBag": "洗牌袋（不重复）",
+
+  "settingsReset": "恢复默认",
+  "closeAction": "关闭"
+}

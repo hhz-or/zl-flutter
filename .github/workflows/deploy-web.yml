@@ -1,0 +1,86 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Pages 部署不允许并发取消，否则可能把半个站点发上去。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: '3.47.5'
+
+jobs:
+  build:
+    name: 构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      # 项目页部署在 https://<user>.github.io/<repo>/ 下，需要设 base-href；
+      # 用户页（<user>.github.io 仓库）则部署在根路径。
+      - name: 计算 base-href
+        id: base
+        run: |
+          if [[ "${GITHUB_EVENT_REPOSITORY_NAME}" == *.github.io ]]; then
+            echo "href=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "href=/${GITHUB_EVENT_REPOSITORY_NAME}/" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GITHUB_EVENT_REPOSITORY_NAME: ${{ github.event.repository.name }}
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Web
+        # --no-web-resources-cdn：把 canvaskit 打进产物，离线/内网也能跑，
+        #   否则 Flutter 会从 gstatic CDN 拉取运行时。
+        # 不使用 --wasm：Flutter 3.47 的多线程 skwasm 在「每帧都在变的文本」
+        #   （正是本应用的乱码动画）上会破坏堆（flutter#190039，修复在 3.48），
+        #   当前 JS + CanvasKit 构建在所有目标上行为一致。
+        run: >-
+          flutter build web
+          --release
+          --base-href "${{ steps.base.outputs.href }}"
+          --no-web-resources-cdn
+
+      - name: 清理产物
+        run: |
+          # Source map 体积是 JS 的数倍；canvaskit 的 *.symbols 是调试符号，
+          # 两者都没有必要发布到线上。
+          find build/web -name '*.map' -delete
+          find build/web -name '*.symbols' -delete
+          # 单页应用：静态托管无法做 rewrite，用 404 兜底可以避免刷新 404。
+          cp build/web/index.html build/web/404.html
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/web
+
+  deploy:
+    name: 部署
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

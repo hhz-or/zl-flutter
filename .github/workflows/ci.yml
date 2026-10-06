@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上的新提交会取消上一次仍在跑的检查。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.5'
+
+jobs:
+  analyze-and-test:
+    name: 静态分析 · 测试 · 字体覆盖
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: 安装字体工具
+        run: pip install --disable-pip-version-check fonttools brotli
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 生成本地化代码
+        run: flutter gen-l10n
+
+      # 语料或文案里出现新字符却忘了重新裁剪字体时，这一步会失败，
+      # 从而避免线上出现「豆腐块」。
+      - name: 校验字体子集覆盖率
+        run: python3 tools/subset_fonts.py --verify
+
+      - name: 静态分析（零容忍）
+        run: flutter analyze
+
+      - name: 单元测试 + Widget 测试
+        run: flutter test --reporter expanded
+
+  build-windows:
+    # 本地桌面是主要目标，所以它必须有独立门禁（Linux 跑不了 Windows 构建）。
+    name: 构建 Windows 产物
+    runs-on: windows-latest
+    needs: analyze-and-test
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Windows
+        run: flutter build windows --release
+
+  build-web:
+    # Web 是顺带的产物，但仍然保证它能构建出来。
+    name: 构建 Web 产物
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 构建 Web
+        run: >-
+          flutter build web
+          --release
+          --base-href /
+          --no-web-resources-cdn

@@ -1,0 +1,29 @@
+# 静态分析配置。
+#
+# 基线使用 Flutter 官方推荐规则集 `package:flutter_lints/flutter.yaml`。
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    # 生成的本地化代码由 flutter gen-l10n 维护，不参与风格检查。
+    - lib/l10n/app_localizations*.dart
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+  errors:
+    # 把「未使用的 import」「无效的注解」之类升级为错误，防止悄悄堆积。
+    unused_import: warning
+    unused_local_variable: warning
+    dead_code: warning
+
+linter:
+  rules:
+    # 该规则在本项目里是误报：构造函数参数是**具名公开**参数（store/preferences…），
+    # 而字段是私有的 (_store/_preferences…)，Dart 不允许具名参数以下划线开头，
+    # 因此无法改写成 `this._store` 这种初始化形参。
+    prefer_initializing_formals: false

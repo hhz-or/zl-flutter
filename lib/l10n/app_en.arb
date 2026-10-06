@@ -1,0 +1,53 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Instruction",
+  "@appTitle": { "description": "Page title; the original site uses <title>指令</title>" },
+
+  "generateButton": "Get Instruction",
+  "@generateButton": { "description": "Original: <button id=\"trigger-btn\">获取指令</button>" },
+
+  "instructionPrefix": "To: ",
+  "@instructionPrefix": { "description": "Prefix of every instruction; original hard-codes 致：" },
+
+  "footerWarning": "Warning: failure to complete the instruction will result in a Proselyte being dispatched to your location.",
+  "@footerWarning": { "description": "Original .footer-note text" },
+
+  "footerDisclaimer": "A fan-made Project Moon tribute. Every instruction is randomly generated fiction — please do not act on it.",
+  "@footerDisclaimer": { "description": "Second footer line, below the original warning" },
+
+  "settingsTitle": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsLanguage": "Language",
+  "languageSystem": "System",
+  "languageZh": "简体中文",
+  "languageEn": "English",
+  "settingsGlow": "Neon glow",
+  "settingsGlowHint": "Glow is the most expensive thing to draw every frame — lower it if the animation stutters",
+  "percentValue": "{percent}%",
+  "@percentValue": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+
+  "settingsMotion": "Motion",
+  "settingsReduceMotion": "Reduce motion",
+  "settingsReduceMotionHint": "Reveal the instruction instantly instead of unscrambling it",
+  "settingsAnimationSpeed": "Animation speed",
+  "settingsAnimationSpeedHint": "1.00× is the original speed",
+  "settingsAnimationSpeedValue": "{value}×",
+  "@settingsAnimationSpeedValue": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+
+  "settingsGeneration": "Generation",
+  "settingsEasterEgg": "Enable easter eggs",
+  "settingsEasterEggHint": "The original always draws with a 15% chance",
+  "settingsEasterEggRate": "Easter egg chance",
+  "settingsEasterEggRateHint": "15% is the original value",
+  "settingsStrategy": "Draw strategy",
+  "strategyPureRandom": "Pure random (original)",
+  "strategyShuffleBag": "Shuffle bag (no repeats)",
+
+  "settingsReset": "Restore defaults",
+  "closeAction": "Close"
+}
