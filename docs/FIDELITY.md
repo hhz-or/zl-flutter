@@ -227,8 +227,16 @@ python tools/subset_fonts.py --verify          # 字体覆盖率（CI 门禁）
   （flutter#190039，修复在 3.48）—— 正是本应用乱码动画的负载特征。
 * **没有真正的离线缓存**：Flutter 3.41 起 `flutter_service_worker.js` 只是一个自注销的存根，
   因此 PWA 只做到「可安装」，未做离线优先。
-* **Flutter 引擎会并行下载 `FontManifest.json` 里声明的全部字体**，且在没有名为 `Roboto` 的字体族时
-  额外从 `fonts.gstatic.com` 拉一次 Roboto。本项目已把字体压到 778 KiB，但没有消除那次额外请求。
+* **启动时会并行取回 `FontManifest.json` 里声明的全部字体**（5 个应用字面 + MaterialIcons
+  + 一份 fallback Roboto）。这些请求都走**本站源**，不发外网。
+* **产物里仍有两处 `gstatic` 字符串，但都是休眠的默认值**（已核实）：
+  一是 CanvasKit 的 CDN 前缀，`--no-web-resources-cdn` 下走本地 `canvaskit/`；
+  二是字体回退管理器的默认基址 `https://fonts.gstatic.com/s/`，只在本地没有 `Roboto`
+  族时才会用到 —— 而 Flutter 会把 `assets/fonts/fallback/Roboto-Regular.ttf`
+  （171 676 B）声明成 `Roboto` 族，所以实际取的是本地文件。
+  本地实际跑一遍，服务器访问日志里出现的是
+  `GET /canvaskit/chromium/canvaskit.wasm` 与 `GET /assets/fonts/fallback/Roboto-Regular.ttf`，
+  **没有任何对外请求**。
 * **中文字体只有 Regular 字重**：霞鹜文楷 Bold 未随原项目提供，加粗由引擎合成。
 
 ---
